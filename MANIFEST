@@ -1,0 +1,5 @@
+Changes
+lib/Class/ActsLike.pm
+MANIFEST
+Makefile.PL
+t/basic.t
