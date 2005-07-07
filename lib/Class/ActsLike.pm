@@ -1,54 +1,27 @@
 package Class::ActsLike;
 
 use strict;
+
 use Scalar::Util;
+use Class::Roles ();
 
 use vars qw( $VERSION );
-$VERSION = '0.01';
+$VERSION = '1.00';
 
-my %acts_like;
+BEGIN
+{
+	*UNIVERSAL::acts_like = \&UNIVERSAL::does;
+}
 
 sub import
 {
 	my ($self, @acts_like) = @_;
-	return unless @acts_like;
+	my $caller             = caller();
 
-	my $caller     = caller;
-	my $acts_like = ( $acts_like{ $caller } ||= {} );
-
-	@$acts_like{ @acts_like } = (1) x @acts_like;
-}
-
-sub parent_acts_like
-{
-	my ($class, $acts_like) = @_;
-	no strict 'refs';
-
-	my $isa = *{ $class . '::ISA' }{ARRAY} or return;
-
-	my $acts_likes = ( $acts_like{ $class } ||= {} );
-	foreach my $parent (@$isa)
+	for my $role (@acts_like)
 	{
-		return $acts_likes->{ $acts_like } = 1
-			if UNIVERSAL::acts_like( $parent, $acts_like );
+		Class::Roles->import( apply => { to => $caller, role => $role } );
 	}
-
-	return;
-}
-
-package UNIVERSAL;
-
-sub acts_like
-{
-	my ($self, $acts_like) = @_;
-	my $class = Scalar::Util::blessed $self || $self;
-
-	return 1 if $acts_like eq $class;
-	return 1 if exists $acts_like{ $class }{ $acts_like };
-	return $acts_like{ $class }{ $acts_like } = 1
-		if isa( $self, $acts_like );
-
-	return Class::ActsLike::parent_acts_like( $class, $acts_like );
 }
 
 1;
@@ -71,22 +44,27 @@ Class::ActsLike - Perl extension for identifying class behavior similarities
 
 =head1 DESCRIPTION
 
+B<Note:> This is a deprecated module.  Use L<Class::Roles> for new development.
+This module uses C<Class::Roles> internally and exists for the purpose of
+backwards compatibility.  The philosophy of the documentation still applies,
+though, so enjoy reading it!
+
 Polymorphism is a fundamental building block of object orientation.  Any two
-objects that can receive the same messages with identical semantics can be
-substituted for each other, regardless of their internal implementations.
+objects that can receive the same messages with identical semantics can
+substitute for each other, regardless of their internal implementations.
 
 Much of the introductory literature explains this concept in terms of
 inheritance.  While inheritance is one way for two different classes to provide
 different behavior for the same methods, it is not the only way.  Perl modules
-such as the DBDs or Test::MockObject prove that classes do not have to inherit
-from a common ancestor to be polymorphically equivalent.
+such as the DBDs or L<Test::MockObject> prove that classes do not have to
+inherit from a common ancestor to be polymorphically equivalent.
 
 Class::ActsLike provides an alternative to C<isa()>.
 
-In the example class defined above, C<HappyFunBuilding> is marked as acting
-like both the C<Bakery> and C<Arcade> classes.  It is not necessary to create
-an ancestor class of C<Building>, or to have C<HappyFunBuilding> inherit from
-both C<Bakery> and C<Arcade>.  As well, one could say:
+The example class defined above marks C<HappyFunBuilding> as acting like both
+the C<Bakery> and C<Arcade> classes.  It is not necessary to create an ancestor
+class of C<Building>, or to have C<HappyFunBuilding> inherit from both
+C<Bakery> and C<Arcade>.  As well, one could say:
 
   package FauxArcade;
 
@@ -122,20 +100,16 @@ inheritance, delegation, composition, or re-implementation.
 
 =back
 
-By default, a new class automatically acts like itself, whether or not you use
+By default, a new class automatically acts like itself, whether you use
 C<Class::ActsLike> in its package.  It also automatically acts like all of its
 parent classes, again without having had C<Class::ActsLike> used in its
 namespace.
 
 =head2 EXPORT
 
-Class::ActsLike installs a new method C<acts_like()> in the C<UNIVERSAL>
-package, so it is available to all classes and objects.  You may call it
-directly, as:
-
-  UNIVERSAL::acts_like( $class_or_object, $potentially_emulated_class );
-
-or on a class name or object:
+Class::ActsLike installs a new method named C<acts_like()> in the C<UNIVERSAL>
+package, so it is available to all classes and objects.  Call it directly on an
+object or a class name:
 
   $class_or_object->acts_like( $potentially_emulated_class );
 
@@ -144,15 +118,25 @@ acts like the target class.
 
 =head1 AUTHOR
 
-chromatic <chromatic@wgz.org>
+chromatic C<< chromatic at wgz dot org >>
 
 =head1 THANKS TO
 
 Allison Randal, for debating the theory of this idea.  Dan Sugalski and Dave
 Rolsky for understanding the idea.
 
+Larry Wall and the rest of the Perl 6 design team for adding roles to Perl 6.
+
+=head1 COPYRIGHT and LICENSE
+
+Copyright (c) 2003 and 2005, chromatic.
+
+You may use, modify, and distribute this software under the same terms as Perl
+5.8.x.  There is no guarantee or warranty.  If something breaks, migrate to
+Class::Roles, then file a bug, write a test, and send a patch.
+
 =head1 SEE ALSO
 
-perl(1).
+perl(1), L<Class::Roles>, Perl 6 Apocalypse 12 and Synopsis 12.
 
 =cut

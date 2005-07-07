@@ -3,7 +3,7 @@
 BEGIN
 {
 	chdir 't' if -d 't';
-	unshift @INC, '../blib/lib', '../lib';
+	use lib '../lib', '../blib/lib';
 }
 
 use Test::More tests => 10;
